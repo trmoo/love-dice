@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="사랑의 주사위">
+<title>사랑의 주사위</title>
+<style>
+/* ══════════════════════════ 기본 ══════════════════════════ */
+:root{
+  --violet:#7c3aed; --rose:#db2777; --ink:#2b2140; --dim:#6b6280;
+  --line:#ece5f5; --card:#ffffff; --bg:#faf6fd;
+  --cube:170px;                 /* 주사위 한 변 */
+  --tab:70px;                   /* 아래 탭바 높이 */
+  --safe:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+  background:var(--bg); color:var(--ink); font-size:17px; line-height:1.62;
+  padding-bottom:calc(var(--tab) + var(--safe));
+  -webkit-text-size-adjust:100%;
+}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--violet)}
+.hide{display:none !important}
+
+/* ══════════════════════════ 머리말 ══════════════════════════ */
+header{
+  background:linear-gradient(135deg,#7c3aed 0%,#a855f7 45%,#db2777 100%);
+  color:#fff; padding:calc(14px + env(safe-area-inset-top,0px)) 18px 16px;
+  text-align:center; position:relative; overflow:hidden;
+}
+header::after{
+  content:''; position:absolute; right:-40px; top:-50px; width:170px; height:170px;
+  background:rgba(255,255,255,.13); border-radius:46px; transform:rotate(24deg);
+}
+header h1{margin:0; font-size:24px; letter-spacing:-.5px; font-weight:800; position:relative}
+header p{margin:4px 0 0; font-size:14px; opacity:.9; position:relative}
+.demo-badge{
+  display:inline-block; margin-top:8px; background:#fff3cd; color:#7a5b00;
+  border-radius:999px; padding:3px 12px; font-size:13px; font-weight:700; position:relative;
+}
+
+/* ══════════════════════════ 공통 부품 ══════════════════════════ */
+main{max-width:640px; margin:0 auto; padding:16px 14px 24px}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:20px;
+  padding:18px; margin-bottom:14px; box-shadow:0 2px 14px rgba(124,58,237,.06);
+}
+.card h2{margin:0 0 10px; font-size:19px; font-weight:800; letter-spacing:-.3px}
+.card h3{margin:18px 0 8px; font-size:16.5px; font-weight:800; color:var(--violet)}
+.muted{color:var(--dim); font-size:14.5px}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:54px; padding:0 22px; border:0; border-radius:16px; cursor:pointer;
+  background:linear-gradient(135deg,#7c3aed,#db2777); color:#fff;
+  font-size:18px; font-weight:800; letter-spacing:-.3px;
+  box-shadow:0 6px 18px rgba(124,58,237,.28); transition:transform .12s, box-shadow .12s;
+}
+.btn:active{transform:translateY(2px); box-shadow:0 2px 8px rgba(124,58,237,.3)}
+.btn[disabled]{opacity:.5; cursor:default; box-shadow:none}
+.btn.ghost{background:#fff; color:var(--violet); border:2px solid #e6dcf7; box-shadow:none}
+.btn.sm{min-height:42px; font-size:15px; padding:0 15px; border-radius:12px}
+.btn.wide{width:100%}
+.row{display:flex; gap:9px; flex-wrap:wrap}
+label.lb{display:block; font-weight:700; margin:14px 0 6px; font-size:15.5px}
+input[type=text],input[type=password],textarea,select{
+  width:100%; padding:13px 14px; border:2px solid var(--line); border-radius:13px;
+  background:#fff; outline:none;
+}
+input:focus,textarea:focus,select:focus{border-color:#c4b5fd}
+textarea{min-height:130px; resize:vertical; line-height:1.6}
+.chip{
+  border:2px solid var(--line); background:#fff; border-radius:999px;
+  padding:8px 14px; font-size:14.5px; font-weight:700; cursor:pointer; color:var(--dim);
+}
+.chip.on{background:#f5edff; border-color:#c4b5fd; color:var(--violet)}
+.msg{border-radius:13px; padding:11px 14px; font-size:15px; font-weight:600; margin-top:12px}
+.msg.ok{background:#eafaf0; color:#166534}
+.msg.no{background:#fdeaea; color:#a01b1b}
+.msg.info{background:#f3edff; color:#5b21b6}
+
+/* ══════════════════════════ 3D 주사위 ══════════════════════════ */
+.stage{
+  position:relative; height:290px; display:grid; place-items:center;
+  perspective:1000px; perspective-origin:50% 42%; margin:4px 0 2px;
+}
+#tossWrap{position:relative; transform-style:preserve-3d}
+#dice{
+  width:var(--cube); height:var(--cube); position:relative;
+  transform-style:preserve-3d;
+  transform:rotateX(-20deg) rotateY(26deg) rotateZ(0deg);
+}
+#dice.idle{animation:float 4.5s ease-in-out infinite}
+@keyframes float{0%,100%{margin-top:0}50%{margin-top:-9px}}
+.face{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; gap:4px;
+  border-radius:20px; color:#fff; padding:8px;
+  font-weight:800; letter-spacing:-.6px; line-height:1.24;
+  font-size:clamp(15px,4.4vw,19px);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.28), inset 0 -14px 26px rgba(0,0,0,.16);
+  text-shadow:0 2px 6px rgba(0,0,0,.22);
+}
+.face .em{font-size:26px; line-height:1}
+.f0{transform:translateZ(calc(var(--cube)/2))}
+.f1{transform:rotateY(90deg)  translateZ(calc(var(--cube)/2))}
+.f2{transform:rotateX(90deg)  translateZ(calc(var(--cube)/2))}
+.f3{transform:rotateY(-90deg) translateZ(calc(var(--cube)/2))}
+.f4{transform:rotateX(-90deg) translateZ(calc(var(--cube)/2))}
+.f5{transform:rotateY(180deg) translateZ(calc(var(--cube)/2))}
+#shadow{
+  position:absolute; bottom:24px; left:50%; width:calc(var(--cube)*.95); height:26px;
+  transform:translateX(-50%); border-radius:50%;
+  background:radial-gradient(ellipse at center,rgba(80,40,120,.34),rgba(80,40,120,0) 70%);
+}
+@keyframes toss{
+  0%{transform:translateY(0) scale(1)}
+  16%{transform:translateY(-104px) scale(1.07)}
+  40%{transform:translateY(8px) scale(.955)}
+  55%{transform:translateY(-40px) scale(1.03)}
+  73%{transform:translateY(5px) scale(.985)}
+  87%{transform:translateY(-12px) scale(1.005)}
+  100%{transform:translateY(0) scale(1)}
+}
+@keyframes tossShadow{
+  0%{opacity:.34; transform:translateX(-50%) scale(1)}
+  16%{opacity:.12; transform:translateX(-50%) scale(.6)}
+  40%{opacity:.4;  transform:translateX(-50%) scale(1.08)}
+  55%{opacity:.2;  transform:translateX(-50%) scale(.8)}
+  100%{opacity:.34;transform:translateX(-50%) scale(1)}
+}
+.rolling #tossWrap{animation:toss 2.3s cubic-bezier(.22,.85,.3,1)}
+.rolling #shadow{animation:tossShadow 2.3s cubic-bezier(.22,.85,.3,1)}
+
+/* 결과 카드 */
+#result{margin-top:6px}
+.result-box{
+  border-radius:22px; padding:20px 18px; color:#fff; text-align:center;
+  box-shadow:0 10px 26px rgba(124,58,237,.22);
+  animation:pop .45s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes pop{from{opacity:0; transform:scale(.9) translateY(10px)} to{opacity:1; transform:none}}
+.result-box .kicker{font-size:14px; opacity:.9; font-weight:700}
+.result-box .big{font-size:clamp(24px,7vw,32px); font-weight:900; margin:6px 0 10px; letter-spacing:-1px; line-height:1.3}
+.result-box .desc{
+  font-size:15.5px; line-height:1.7; background:rgba(255,255,255,.17);
+  border-radius:15px; padding:13px 15px; text-align:left;
+}
+.fixed-tag{
+  display:inline-block; background:#f5edff; color:#5b21b6; border-radius:999px;
+  padding:5px 14px; font-size:14px; font-weight:800; margin-bottom:10px;
+}
+/* 오늘 분포 막대 */
+.bars{margin-top:6px}
+.bar-row{display:flex; align-items:center; gap:9px; margin:7px 0; font-size:14px}
+.bar-row .nm{width:124px; flex:none; font-weight:700; font-size:13.5px; color:var(--dim);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.bar-wrap{flex:1; background:#f1ebfa; border-radius:999px; height:15px; overflow:hidden}
+.bar{height:100%; border-radius:999px; transition:width .6s ease}
+.bar-row .ct{width:34px; text-align:right; flex:none; color:var(--dim); font-weight:700}
+
+/* ══════════════════════════ 나눔 ══════════════════════════ */
+.story{
+  background:#fff; border:1px solid var(--line); border-radius:18px;
+  padding:15px 16px; margin-bottom:11px;
+}
+.story .top{display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap}
+.story .who{font-weight:800; font-size:15.5px}
+.story .when{color:#9a93ab; font-size:13px}
+.story .tag{
+  font-size:12.5px; font-weight:800; border-radius:999px; padding:3px 10px; color:#fff;
+}
+.story .body{white-space:pre-wrap; word-break:break-word; font-size:16px; line-height:1.68}
+.story .bottom{display:flex; align-items:center; gap:10px; margin-top:11px}
+.heart{
+  display:inline-flex; align-items:center; gap:6px; border:2px solid #f6dbe6;
+  background:#fff; color:#c2185b; border-radius:999px; padding:7px 15px;
+  font-weight:800; font-size:15px; cursor:pointer; min-height:42px;
+}
+.heart.on{background:#ffe7ef; border-color:#f9a8c8}
+.heart .ic{font-size:17px; transition:transform .25s}
+.heart.bump .ic{animation:bump .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.6)}100%{transform:scale(1)}}
+.linkbtn{background:none; border:0; color:#9a93ab; font-size:13.5px; cursor:pointer; padding:6px}
+.counter{text-align:right; font-size:13px; color:var(--dim); margin-top:5px}
+
+/* ══════════════════════════ 위젯 ══════════════════════════ */
+.preview-wrap{display:flex; justify-content:center; margin:14px 0 6px}
+#wallPrev{
+  width:186px; border-radius:22px; border:1px solid #e3d9f2;
+  box-shadow:0 8px 22px rgba(80,40,120,.18); background:#eee; display:block;
+}
+#wallOut{width:100%; max-width:300px; border-radius:18px; display:block; margin:12px auto 0;
+  box-shadow:0 8px 22px rgba(80,40,120,.2)}
+.theme-dots{display:flex; gap:10px; flex-wrap:wrap; margin-top:8px}
+.dot{width:42px; height:42px; border-radius:13px; cursor:pointer; border:3px solid transparent}
+.dot.on{border-color:var(--ink); transform:scale(1.06)}
+pre.code{
+  background:#241a36; color:#f2ecff; border-radius:14px; padding:14px;
+  font-size:12.5px; line-height:1.55; overflow:auto; max-height:250px;
+  font-family:ui-monospace,Consolas,monospace; white-space:pre; -webkit-overflow-scrolling:touch;
+}
+.urlbox{
+  background:#f6f2fd; border:2px dashed #d6c8f0; border-radius:13px; padding:11px 13px;
+  font-size:13px; word-break:break-all; font-family:ui-monospace,Consolas,monospace;
+  color:#4c2889; margin:8px 0;
+}
+ol.steps{margin:8px 0 0 0; padding-left:22px}
+ol.steps li{margin:7px 0}
+.note{background:#fff8e6; border-left:5px solid #f0c14b; border-radius:0 12px 12px 0;
+  padding:11px 14px; font-size:14.5px; margin-top:12px; line-height:1.6}
+
+/* ══════════════════════════ 소개 ══════════════════════════ */
+.face-item{display:flex; gap:13px; padding:13px 0; border-bottom:1px solid var(--line)}
+.face-item:last-child{border-bottom:0}
+.face-no{
+  width:44px; height:44px; flex:none; border-radius:14px; color:#fff;
+  display:grid; place-items:center; font-size:21px;
+}
+.face-item .tx b{display:block; font-size:17px; margin-bottom:3px}
+.face-item .tx span{font-size:14.8px; color:var(--dim); line-height:1.62}
+blockquote{
+  margin:12px 0; padding:12px 16px; background:#f8f4ff; border-left:5px solid #c4b5fd;
+  border-radius:0 12px 12px 0; font-size:15.5px; line-height:1.7;
+}
+
+/* ══════════════════════════ 아래 탭바 ══════════════════════════ */
+nav.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:rgba(255,255,255,.97); backdrop-filter:blur(10px);
+  border-top:1px solid var(--line); display:flex;
+  padding-bottom:var(--safe);
+}
+nav.tabbar button{
+  flex:1; border:0; background:none; cursor:pointer; height:var(--tab);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  color:#9a93ab; font-size:12.5px; font-weight:700;
+}
+nav.tabbar button .ic{font-size:22px; line-height:1}
+nav.tabbar button.on{color:var(--violet)}
+@media (min-width:700px){ :root{--cube:200px} .stage{height:330px} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💜 사랑의 주사위</h1>
+  <p id="hdDate">오늘 하루, 한 가지만 실천해요</p>
+  <span id="demoBadge" class="demo-badge hide">미리보기 모드</span>
+</header>
+
+<main>
+
+<!-- ═══════════════ ① 주사위 ═══════════════ -->
+<section id="page-dice">
+  <div class="card" style="padding-top:10px">
+    <div class="stage" id="stage">
+      <div id="tossWrap">
+        <div id="dice" class="idle">
+          <div class="face f0"></div><div class="face f1"></div><div class="face f2"></div>
+          <div class="face f3"></div><div class="face f4"></div><div class="face f5"></div>
+        </div>
+      </div>
+      <div id="shadow"></div>
+    </div>
+    <div class="row" style="justify-content:center">
+      <button class="btn" id="btnRoll">🎲 주사위 던지기</button>
+    </div>
+    <p class="muted" style="text-align:center;margin:12px 0 0" id="rollHint">
+      폰을 흔들어도 던져집니다.
+    </p>
+    <div class="row" style="justify-content:center;margin-top:8px">
+      <button class="btn ghost sm hide" id="btnShake">📱 흔들어서 던지기 켜기</button>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="card">
+    <h2>오늘 함께한 사람들</h2>
+    <p class="muted" id="statLine">불러오는 중…</p>
+    <div class="bars" id="bars"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ ② 이야기 나눔 ═══════════════ -->
+<section id="page-share" class="hide">
+  <div class="card">
+    <h2>실천한 이야기를 남겨 주세요</h2>
+    <p class="muted">이름을 쓰지 않아도 됩니다. 오늘 사랑을 실천하며 겪은 일을 적어 주세요.</p>
+
+    <label class="lb">어느 면을 실천했나요?</label>
+    <div class="row" id="facePick"></div>
+
+    <label class="lb">이름 <span class="muted" style="font-weight:400">(비우면 익명으로 올라갑니다)</span></label>
+    <input type="text" id="inName" maxlength="12" placeholder="예) 김미소 · 미소맘 · (비워 두면 익명)">
+    <div class="row" style="margin-top:9px">
+      <button class="chip on" id="chipAnon" type="button">🙈 익명으로 올리기</button>
+    </div>
+
+    <label class="lb">실천한 이야기</label>
+    <textarea id="inText" maxlength="500" placeholder="예) 아침에 '먼저 사랑하자'가 나왔어요. 늘 먼저 인사해 주길 기다리던 옆자리 동료에게 제가 먼저 웃으며 인사했더니…"></textarea>
+    <div class="counter"><span id="cnt">0</span> / 500자</div>
+
+    <label class="lb">지울 때 쓸 숫자 4자리</label>
+    <input type="password" id="inPw" inputmode="numeric" maxlength="4" placeholder="예) 1234 — 나중에 내 글을 지울 때 씁니다">
+
+    <div class="row" style="margin-top:16px">
+      <button class="btn wide" id="btnPost">💌 이야기 올리기</button>
+    </div>
+    <div id="postMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>함께 나눈 이야기</h2>
+    <div class="row" style="margin-bottom:8px">
+      <button class="chip on" data-sort="new">최신순</button>
+      <button class="chip" data-sort="heart">공감 많은 순</button>
+    </div>
+    <div class="row" id="filterRow" style="margin-bottom:12px"></div>
+    <div id="feed"><p class="muted">불러오는 중…</p></div>
+    <div class="row" style="justify-content:center;margin-top:6px">
+      <button class="btn ghost sm hide" id="btnMore">더 보기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ③ 위젯 ═══════════════ -->
+<section id="page-widget" class="hide">
+
+  <div class="card">
+    <h2>① 잠금화면 · 배경화면 만들기</h2>
+    <p class="muted">앱을 따로 깔지 않아도 됩니다. <b>아이폰·안드로이드 모두</b> 이 방법이 가장 확실합니다.</p>
+
+    <label class="lb">어디에 쓸 그림인가요?</label>
+    <div class="row" id="wallKind">
+      <button class="chip on" data-kind="lock">🔒 잠금화면용</button>
+      <button class="chip" data-kind="home">🏠 배경화면용</button>
+    </div>
+
+    <label class="lb">문구 고르기</label>
+    <select id="wallFace"></select>
+
+    <label class="lb">색</label>
+    <div class="theme-dots" id="themeDots"></div>
+
+    <div class="preview-wrap"><canvas id="wallPrev" width="186" height="403"></canvas></div>
+
+    <div class="row" style="margin-top:6px">
+      <button class="btn wide" id="btnMakeWall">🖼️ 내 폰 크기로 만들기</button>
+    </div>
+    <p class="muted" id="wallSize" style="text-align:center;margin:8px 0 0"></p>
+
+    <div id="wallResult" class="hide">
+      <img id="wallOut" alt="오늘의 사랑의 주사위 배경화면">
+      <div class="note">
+        <b>저장하는 법</b><br>
+        · 아이폰 : 위 그림을 <b>손가락으로 꾹 누르고</b> → 「사진에 추가」<br>
+        · 안드로이드 : 위 그림을 <b>꾹 누르고</b> → 「이미지 다운로드」<br>
+        저장한 뒤 <b>설정 → 배경화면</b>에서 골라 주세요.
+      </div>
+      <div class="row" style="margin-top:11px">
+        <button class="btn ghost sm" id="btnShare">📤 공유·저장</button>
+        <button class="btn ghost sm" id="btnNewTab">🔎 새 창에서 크게 보기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 아이폰 잠금화면 위젯 (진짜 위젯)</h2>
+    <p class="muted">무료 앱 <b>Scriptable</b> 하나만 깔면, 잠금화면·홈화면에 오늘 문구가 <b>매일 저절로 바뀌며</b> 뜹니다.</p>
+    <ol class="steps">
+      <li>App Store 에서 <b>Scriptable</b> 을 설치합니다. (무료)</li>
+      <li>아래 <b>[스크립트 복사]</b> 를 누릅니다.</li>
+      <li>Scriptable 을 열고 오른쪽 위 <b>＋</b> → 붙여넣기 → 이름을 <b>사랑의 주사위</b> 로 저장합니다.</li>
+      <li>잠금화면을 꾹 눌러 <b>사용자화 → 잠금화면 → 위젯 추가 → Scriptable</b> 을 고릅니다.</li>
+      <li>위젯을 눌러 <b>Script = 사랑의 주사위</b>, <b>When Interacting = Run Script</b> 로 맞춥니다.</li>
+    </ol>
+    <div class="row" style="margin-top:12px">
+      <button class="btn sm" id="btnCopyScript">📋 스크립트 복사</button>
+    </div>
+    <pre class="code" id="scriptBox">…</pre>
+    <div class="note" id="urlWarn">
+      <b>먼저 배포해 주세요.</b> 이 파일을 그냥 열어 본 상태라 앱 주소를 알 수 없습니다.
+      Apps Script 로 배포한 뒤 <b>그 주소로 접속해서</b> 이 화면을 열면 주소가 저절로 채워집니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ 아이폰 단축어로 아침 알림</h2>
+    <p class="muted">위젯 대신, 매일 아침 오늘 문구를 알림으로 받는 방법입니다.</p>
+    <ol class="steps">
+      <li><b>단축어</b> 앱 → <b>자동화</b> → <b>새로운 자동화</b> → <b>시각</b> → 오전 7:00 · 매일 · <b>즉시 실행</b></li>
+      <li>동작 추가 → <b>URL 콘텐츠 가져오기</b> → 아래 주소를 붙여넣습니다.</li>
+      <li>동작 추가 → <b>사전 값 가져오기</b> → 키 <b>text</b></li>
+      <li>동작 추가 → <b>알림 표시</b> → 위 결과를 넣습니다.</li>
+    </ol>
+    <div class="urlbox" id="apiUrl1">(앱을 배포하면 주소가 표시됩니다)</div>
+    <button class="btn ghost sm" id="btnCopyUrl1">📋 주소 복사</button>
+  </div>
+
+  <div class="card">
+    <h2>④ 안드로이드 위젯</h2>
+    <p class="muted">안드로이드는 웹에서 바로 위젯을 만들 수 없어, 두 가지 길이 있습니다.</p>
+    <h3>쉬운 길 — 배경화면</h3>
+    <p class="muted">위 <b>①번</b>에서 그림을 만들어 저장한 뒤, <b>설정 → 배경화면 → 잠금화면</b> 에 지정하면 끝입니다. 추가 앱이 필요 없습니다.</p>
+    <h3>자동으로 매일 바꾸고 싶다면</h3>
+    <ol class="steps">
+      <li>Play 스토어에서 <b>KWGT</b>(무료) 를 설치합니다.</li>
+      <li>위젯을 하나 만들고 <b>텍스트</b> 항목을 넣습니다.</li>
+      <li>텍스트 수식에 아래 <b>수식</b>을 그대로 붙여 넣습니다.
+          <code>json</code> 은 「JSON 에서 골라 오기」, <code>.text</code> 는 「그중 문구만」 이라는 뜻입니다.
+          (Tasker 를 쓴다면 <b>HTTP Request → JSON 읽기</b> 로도 됩니다.)</li>
+    </ol>
+    <div class="urlbox" id="apiFormula">(앱을 배포하면 수식이 표시됩니다)</div>
+    <button class="btn ghost sm" id="btnCopyFormula">📋 수식 복사</button>
+    <p class="muted" style="margin:12px 0 4px">주소만 필요할 때 (Tasker 등)</p>
+    <div class="urlbox" id="apiUrl2">(앱을 배포하면 주소가 표시됩니다)</div>
+    <button class="btn ghost sm" id="btnCopyUrl2">📋 주소 복사</button>
+    <div class="note">
+      주소 끝의 <code>u=</code> 뒤에 붙은 것은 <b>이 폰만의 번호</b>입니다.
+      내가 던진 주사위 결과를 위젯이 그대로 보여 주기 위한 것이고, 이름·전화번호 같은 정보는 들어 있지 않습니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⑤ 홈 화면에 앱처럼 두기</h2>
+    <ol class="steps">
+      <li><b>아이폰</b> : 사파리로 이 주소를 열고 → 아래 <b>공유 <span style="font-size:15px">􀈂</span></b> → <b>홈 화면에 추가</b></li>
+      <li><b>안드로이드</b> : 크롬으로 열고 → 오른쪽 위 <b>⋮</b> → <b>홈 화면에 추가</b></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════ ④ 소개 ═══════════════ -->
+<section id="page-about" class="hide">
+  <div class="card">
+    <h2>사랑의 주사위란?</h2>
+    <blockquote>
+      “끼아라, 저는 예수님을 닮고 싶어요. 어떻게 하면 되나요?”<br>
+      <span class="muted">— 1998년 4젠 대회에서 베네수엘라의 안젤리카가 물었습니다.</span>
+    </blockquote>
+    <p>
+      끼아라 루빅은 <b>‘사랑의 예술’</b>에 대해 이렇게 답했습니다.
+      “‘사랑의 예술’이란 모든 이를 사랑하는 것, 먼저 사랑하는 것, 지금 내 곁에 있는 사람을 사랑하는 것,
+      잘못을 용서해 주는 것, 다른 사람의 말에 귀를 기울이는 것, 서로 사랑하는 것을 말해요.
+      <b>이 모든 것이 사랑의 주사위에 쓰여 있어요.</b>”
+    </p>
+    <p>
+      그때부터 전 세계의 아이들은 <b>매일 아침 주사위를 던지는 단순한 놀이</b>를 합니다.
+      나온 말씀을 그날 하루 실천하며 사는 것입니다. 지금은 어린이뿐 아니라 청소년·젊은이·어른들까지
+      학교, 성당, 직장에서 함께 던집니다.
+    </p>
+    <blockquote>
+      “그러므로 여러분은 무엇이든지 사람들이 여러분을 위해 해주기 바라는 것을
+      그대로 그들에게 해 주십시오!” <span class="muted">(마태오 7장 12절, 황금률)</span>
+    </blockquote>
+  </div>
+
+  <div class="card">
+    <h2>여섯 면의 말씀</h2>
+    <div id="aboutFaces"></div>
+  </div>
+
+  <div class="card">
+    <h2>우리나라의 사랑의 주사위</h2>
+    <p>
+      가톨릭신문(2010년 1월 20일)에 따르면, 허용 신부는 포콜라레 모임에서 성경 구절이 새겨진 종이 주사위로
+      묵상 주제를 고르는 것을 보고 이를 신자들을 위해 각색했습니다.
+      한 달여의 설문조사로 신자들이 가장 좋아하는 구절을 골라
+      <b>인체에 무해한 대추나무</b>로 <b>가로·세로 3cm 남짓, 한 손에 쏙 들어오는</b> 주사위를 만들었습니다.
+      「이웃과 하나되자」, 「항상 감사하자」 같은 문구가 새겨져 있고,
+      주일학교와 레지오 모임에서도 묵상 주제로 쓰입니다.
+    </p>
+    <blockquote>
+      “매일 아침 남편이 출근하기 전 시간을 내 함께 주사위를 던집니다. 생활이 풍요로워진 기분이에요.”<br>
+      <span class="muted">— 김기원(56) 신자</span>
+    </blockquote>
+  </div>
+
+  <div class="card">
+    <h2>여기서 태어난 다른 주사위들</h2>
+    <ul style="padding-left:20px;margin:6px 0">
+      <li><b>평화 주사위</b> — Living Peace International</li>
+      <li><b>스포츠 주사위</b> — Sport4Peace (스포츠에 참된 가치를)</li>
+      <li><b>환경 주사위</b> — The Earth Cube</li>
+      <li><b>교육 주사위</b> — 교육 현장을 위한 주사위</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>참고한 글</h2>
+    <p class="muted" style="word-break:break-all">
+      · 포콜라레 4젠 「사랑의 예술과 ‘주사위’」 — gen4.co.kr<br>
+      · 가톨릭신문 2010-01-20 「사랑의 주사위」 기사 — catholictimes.org
+    </p>
+    <p class="muted" style="margin-top:14px">
+      이 앱은 이름·연락처 같은 개인정보를 받지 않습니다.
+      이름을 적는 칸은 본인이 원할 때만 쓰는 <b>표시 이름</b>이며, 비우면 익명으로 올라갑니다.
+    </p>
+  </div>
+</section>
+
+</main>
+
+<nav class="tabbar">
+  <button class="on" data-go="dice"><span class="ic">🎲</span>주사위</button>
+  <button data-go="share"><span class="ic">💬</span>나눔</button>
+  <button data-go="widget"><span class="ic">📱</span>위젯</button>
+  <button data-go="about"><span class="ic">📖</span>소개</button>
+</nav>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   사랑의 주사위 — 화면 쪽 코드
+   ══════════════════════════════════════════════════════════════ */
+
+/* 주사위 여섯 면. 문구와 해설은 포콜라레 4젠(gen4.co.kr) 원문 그대로다. */
+/* t=전체 문구 · s=주사위 면에 새길 짧은 글 · b=막대그래프용 아주 짧은 이름 */
+var FACES = [
+  { t:'모든 이를 사랑하자', s:'모든 이를\n사랑하자', b:'모든 이를', em:'🌍', c1:'#f472b6', c2:'#be185d',
+    d:'내가 좋아하는 사람이나 미워하는 사람, 키가 큰 사람이나 작은 사람, 공부를 잘하는 아이나 못하는 아이, 부자거나 가난한 사람 등 구별 없이 모두를 사랑하는 거예요.' },
+  { t:'먼저 사랑하자', s:'먼저\n사랑하자', b:'먼저', em:'🌱', c1:'#34d399', c2:'#047857',
+    d:'말 그대로 남이 나를 사랑하길 기다리지 않고 내가 먼저 사랑하는 거예요. 먼저 도와주고, 먼저 놀아 주고, 먼저 용서해 주고, 먼저 화해하고, 먼저 인사하고, 먼저 웃어 주는 거예요.' },
+  { t:'지금 내 곁에 있는 사람을 사랑하자', s:'곁에 있는 이를\n사랑하자', b:'곁에 있는 이를', em:'🤝', c1:'#60a5fa', c2:'#1d4ed8',
+    d:'엄마나 아빠, 또는 친구들이 내게 잘해 주기를 바라고, 내가 원하는 대로 해 주길 바라는 것처럼 먼저 내 곁에 있는 가족이나 친구가 원하는 대로 사랑해 주는 거지요.' },
+  { t:'잘못을 용서해 주자', s:'잘못을\n용서해 주자', b:'용서하기', em:'🕊️', c1:'#a78bfa', c2:'#6d28d9',
+    d:'내 맘에 들지 않는 사람들이나 잘못된 행동으로 나를 어렵게 하는 사람들이 있지요. 하지만 잘못을 용서해 주고 다시 사랑하는 거예요.' },
+  { t:'다른 사람의 말에 귀를 기울이자', s:'귀를\n기울이자', b:'귀 기울이기', em:'👂', c1:'#fbbf24', c2:'#b45309',
+    d:'모든 사람의 마음 안에 예수님이 계시기에 더욱 다른 사람이 하는 말에 귀를 기울여야 해요. 곁에 있는 사람을 사랑하는 것은 바로 예수님을 사랑하는 것이기 때문이에요.' },
+  { t:'서로 사랑하자', s:'서로\n사랑하자', b:'서로', em:'❤️', c1:'#fb7185', c2:'#9f1239',
+    d:'사랑은 혼자만 하는 것이 아니라 함께 서로 사랑하는 거예요. 예수님께서 두 사람이나 세 사람이라도 예수님 이름으로 모인 곳에 함께 계시겠다고 하셨어요. 그러니 우리가 서로 사랑한다면 예수님께서 우리 사이에 오셔서 우리와 함께 계시게 되어요.' }
+];
+
+/* 각 면을 정면으로 세우는 회전 각도 (CSS 의 .f0~.f5 배치와 짝을 이룬다) */
+var ROT = [
+  { x:0,   y:0   },  /* f0 앞  */
+  { x:0,   y:-90 },  /* f1 오른쪽 */
+  { x:-90, y:0   },  /* f2 위  */
+  { x:0,   y:90  },  /* f3 왼쪽 */
+  { x:90,  y:0   },  /* f4 아래 */
+  { x:0,   y:180 }   /* f5 뒤  */
+];
+
+var $ = function(id){ return document.getElementById(id); };
+var IS_DEMO = !(window.google && window.google.script && window.google.script.run);
+var APP_URL = '';          /* 배포된 웹앱 주소 (서버가 알려 준다) */
+var UID = '';              /* 이 기기만의 무작위 번호 */
+var canStore = true;       /* 이 기기에 저장할 수 있는지 (사파리 쿠키 차단 등) */
+var myFace = -1;           /* 오늘 확정한 면 (-1 이면 아직) */
+var shownFace = -1;        /* 지금 주사위에 보이는 면 */
+var rolling = false;
+
+/* ─────────────── 서버 부르기 (미리보기 모드면 이 컴퓨터 안에서 흉내낸다) ─────────────── */
+function call(fn, args, ok, bad){
+  bad = bad || function(e){ console.warn(fn, e); };
+  if (IS_DEMO) { setTimeout(function(){ demo(fn, args, ok, bad); }, 220); return; }
+  var r = google.script.run.withSuccessHandler(ok).withFailureHandler(bad);
+  r[fn].apply(r, args);
+}
+
+/* ─────────────── 시작 ─────────────── */
+function boot(){
+  /*
+   * 기기 번호 만들기.
+   * Apps Script 는 화면을 다른 주소(googleusercontent.com)의 iframe 으로 띄우기 때문에,
+   * 사파리에서 「모든 쿠키 차단」을 켜 두면 localStorage 를 만지는 순간 오류가 난다.
+   * 여기서 막히면 아래 화면 그리기가 통째로 멈추므로 반드시 감싸 둔다.
+   * 저장이 안 되는 기기에서는 이번 방문에만 쓰는 번호로 동작한다.
+   */
+  try { UID = localStorage.getItem('ld_uid'); } catch (e) { UID = ''; canStore = false; }
+  if (!UID) {
+    UID = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem('ld_uid', UID); } catch (e2) { canStore = false; }
+  }
+  if (IS_DEMO) $('demoBadge').classList.remove('hide');
+
+  paintCube(0);
+  buildFacePicker();
+  buildAboutFaces();
+  buildWallControls();
+  bindAll();
+  drawPreview();
+
+  var d = new Date();
+  $('hdDate').textContent = (d.getMonth()+1) + '월 ' + d.getDate() + '일 · 오늘 하루, 한 가지만 실천해요';
+
+  call('getToday', [UID], function(res){
+    if (!res || !res.ok) return;
+    if (res.url) { APP_URL = res.url; }
+    refreshWidgetTexts();
+    paintStat(res.stat);
+    var saved = todayLocalFace();
+    var f = (res.myFace >= 0) ? res.myFace : saved;
+    if (f >= 0) { showFaceNow(f, true); }
+  }, function(){
+    var f = todayLocalFace();
+    if (f >= 0) showFaceNow(f, true);
+    refreshWidgetTexts();
+  });
+
+  loadFeed(true);
+}
+
+/* 오늘 이 기기에 저장해 둔 면 */
+function todayLocalFace(){
+  try{
+    var raw = JSON.parse(localStorage.getItem('ld_today') || '{}');
+    if (raw.date === ymd()) return Number(raw.face);
+  }catch(e){}
+  return -1;
+}
+function ymd(){
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+/* ─────────────── 주사위 ─────────────── */
+function paintCube(){
+  var els = document.querySelectorAll('#dice .face');
+  for (var i = 0; i < 6; i++){
+    var f = FACES[i], el = els[i];
+    el.style.background = 'linear-gradient(150deg,' + f.c1 + ',' + f.c2 + ')';
+    var lines = f.s.split('\n');
+    el.innerHTML = '<span class="em">' + f.em + '</span>' +
+                   lines.map(function(l){ return '<span>' + l + '</span>'; }).join('');
+  }
+}
+
+var rx = -20, ry = 26, rz = 0;
+/* 지금 각도에서 목표 각도까지, 여러 바퀴 더 돌아서 도착하게 만든다 */
+function snap(cur, target, turns){
+  var base = cur + 360 * turns;
+  var m = ((target - base) % 360 + 360) % 360;
+  return base + m;
+}
+
+function rollDice(){
+  if (rolling) return;
+  rolling = true;
+  var face = Math.floor(Math.random() * 6);
+
+  var dice = $('dice'), stage = $('stage');
+  dice.classList.remove('idle');
+  stage.classList.remove('rolling');
+  void stage.offsetWidth;               /* 애니메이션을 처음부터 다시 돌리기 */
+  stage.classList.add('rolling');
+
+  var t = ROT[face];
+  rx = snap(rx, t.x, 3 + Math.floor(Math.random() * 3));
+  ry = snap(ry, t.y, 3 + Math.floor(Math.random() * 3));
+  rz = snap(rz, 0,   1 + Math.floor(Math.random() * 2));
+  dice.style.transition = 'transform 2.3s cubic-bezier(.22,.85,.3,1)';
+  dice.style.transform  = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) rotateZ(' + rz + 'deg)';
+
+  $('btnRoll').disabled = true;
+  $('result').innerHTML = '';
+  try{ if (navigator.vibrate) navigator.vibrate([12, 90, 22]); }catch(e){}
+
+  setTimeout(function(){
+    rolling = false;
+    stage.classList.remove('rolling');
+    $('btnRoll').disabled = false;
+    try{ if (navigator.vibrate) navigator.vibrate(45); }catch(e){}
+    shownFace = face;
+    showResult(face, false);
+  }, 2320);
+}
+
+/* 굴리지 않고 바로 그 면을 보여 준다 (오늘 이미 정해 둔 경우) */
+function showFaceNow(face, fixed){
+  var dice = $('dice');
+  var t = ROT[face];
+  rx = t.x; ry = t.y; rz = 0;
+  dice.style.transition = 'transform .7s ease';
+  dice.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+  shownFace = face;
+  if (fixed) myFace = face;
+  showResult(face, fixed);
+}
+
+function showResult(face, fixed){
+  var f = FACES[face];
+  var h = '';
+  h += '<div class="result-box" style="background:linear-gradient(140deg,' + f.c1 + ',' + f.c2 + ')">';
+  if (fixed) h += '<div class="fixed-tag">✓ 오늘의 실천</div>';
+  h += '<div class="kicker">' + f.em + ' 오늘 나온 면</div>';
+  h += '<div class="big">' + f.t + '</div>';
+  h += '<div class="desc">' + f.d + '</div>';
+  h += '</div>';
+  h += '<div class="row" style="margin-top:12px">';
+  if (!fixed) h += '<button class="btn wide" id="btnFix">✓ 오늘의 실천으로 정하기</button>';
+  h += '</div>';
+  h += '<div class="row" style="margin-top:9px">';
+  h += '<button class="btn ghost sm" id="btnGoWidget">📱 잠금화면에 올리기</button>';
+  h += '<button class="btn ghost sm" id="btnGoShare">💬 실천 이야기 쓰기</button>';
+  h += '</div>';
+  $('result').innerHTML = h;
+
+  if ($('btnFix')) $('btnFix').onclick = function(){ fixToday(face); };
+  $('btnGoWidget').onclick = function(){
+    go('widget');
+    $('wallFace').value = String(face);
+    drawPreview();
+  };
+  $('btnGoShare').onclick = function(){
+    go('share');
+    pickFace(face + 1);
+  };
+}
+
+/* 오늘의 실천으로 확정 — 서버에도 알려서 위젯이 같은 문구를 보게 한다 */
+function fixToday(face){
+  myFace = face;
+  try { localStorage.setItem('ld_today', JSON.stringify({ date: ymd(), face: face })); }
+  catch (e) { canStore = false; }   /* 저장이 막힌 기기여도 서버에는 올라가니 그냥 넘어간다 */
+  showResult(face, true);
+  refreshWidgetTexts();
+  $('wallFace').value = String(face);
+  drawPreview();
+  call('saveMyRoll', [UID, face], function(res){
+    if (res && res.ok && res.stat) paintStat(res.stat);
+  });
+}
+
+function paintStat(st){
+  if (!st) return;
+  $('statLine').textContent = '오늘 ' + (st.people || 0) + '명이 함께 주사위를 던졌습니다.';
+  var max = Math.max(1, Math.max.apply(null, st.dist || [0]));
+  var h = '';
+  for (var i = 0; i < 6; i++){
+    var n = (st.dist && st.dist[i]) || 0;
+    var w = Math.round(n / max * 100);
+    h += '<div class="bar-row"><span class="nm">' + FACES[i].em + ' ' + FACES[i].b + '</span>' +
+         '<span class="bar-wrap"><span class="bar" style="width:' + w + '%;background:linear-gradient(90deg,' +
+         FACES[i].c1 + ',' + FACES[i].c2 + ')"></span></span>' +
+         '<span class="ct">' + n + '</span></div>';
+  }
+  $('bars').innerHTML = h;
+}
+
+/* 흔들어서 던지기 */
+var shakeOn = false, lastShake = 0;
+function onMotion(e){
+  var a = e.accelerationIncludingGravity;
+  if (!a) return;
+  var p = Math.abs(a.x || 0) + Math.abs(a.y || 0) + Math.abs(a.z || 0);
+  var now = Date.now();
+  if (p > 34 && now - lastShake > 1600){ lastShake = now; rollDice(); }
+}
+function enableShake(){
+  var D = window.DeviceMotionEvent;
+  if (!D){ $('rollHint').textContent = '이 기기에서는 흔들기를 쓸 수 없어요.'; return; }
+  if (typeof D.requestPermission === 'function'){
+    D.requestPermission().then(function(r){
+      if (r === 'granted'){ startShake(); }
+      else { $('rollHint').textContent = '흔들기 권한이 꺼져 있어요. 버튼으로 던져 주세요.'; }
+    }).catch(function(){});
+  } else { startShake(); }
+}
+function startShake(){
+  if (shakeOn) return;
+  shakeOn = true;
+  window.addEventListener('devicemotion', onMotion);
+  $('btnShake').classList.add('hide');
+  $('rollHint').textContent = '이제 폰을 흔들면 주사위가 던져집니다! 🎲';
+}
+
+/* ─────────────── 나눔 ─────────────── */
+var pickedFace = 0, sortMode = 'new', filterFace = 0, feedStart = 0;
+/* 이미 화면에 붙인 글 번호. 새 글을 올린 뒤 「더 보기」를 눌러도 같은 글이 두 번 나오지 않게 한다. */
+var seenIds = {};
+
+function buildFacePicker(){
+  var h = '<button class="chip on" data-f="0" type="button">아직 안 정했어요</button>';
+  for (var i = 0; i < 6; i++){
+    h += '<button class="chip" data-f="' + (i+1) + '" type="button">' + FACES[i].em + ' ' +
+         FACES[i].s.replace('\n', ' ') + '</button>';
+  }
+  $('facePick').innerHTML = h;
+  $('facePick').onclick = function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    pickFace(Number(b.getAttribute('data-f')));
+  };
+
+  var g = '<button class="chip on" data-ff="0" type="button">전체</button>';
+  for (var j = 0; j < 6; j++){
+    g += '<button class="chip" data-ff="' + (j+1) + '" type="button">' + FACES[j].em + '</button>';
+  }
+  $('filterRow').innerHTML = g;
+  $('filterRow').onclick = function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    filterFace = Number(b.getAttribute('data-ff'));
+    [].forEach.call($('filterRow').children, function(c){ c.classList.remove('on'); });
+    b.classList.add('on');
+    loadFeed(true);
+  };
+}
+function pickFace(n){
+  pickedFace = n;
+  [].forEach.call($('facePick').children, function(c){
+    c.classList.toggle('on', Number(c.getAttribute('data-f')) === n);
+  });
+}
+
+function loadFeed(reset){
+  if (reset) { feedStart = 0; seenIds = {}; $('feed').innerHTML = '<p class="muted">불러오는 중…</p>'; }
+  call('getFeed', [{ uid: UID, face: filterFace, sort: sortMode, start: feedStart }], function(res){
+    if (!res || !res.ok) { $('feed').innerHTML = '<p class="muted">아직 이야기가 없어요.</p>'; return; }
+    if (reset) $('feed').innerHTML = '';
+    if (!res.rows.length && reset){
+      $('feed').innerHTML = '<p class="muted">아직 나눈 이야기가 없어요. 첫 이야기를 남겨 주세요 💜</p>';
+    }
+    res.rows.forEach(function(r){
+      if (seenIds[r.id]) return;          /* 이미 붙어 있는 글은 건너뛴다 */
+      seenIds[r.id] = 1;
+      $('feed').insertAdjacentHTML('beforeend', storyHtml(r));
+    });
+    feedStart += res.rows.length;
+    $('btnMore').classList.toggle('hide', !res.more);
+  }, function(){ $('feed').innerHTML = '<p class="muted">이야기를 불러오지 못했어요.</p>'; });
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function storyHtml(r){
+  var f = r.face ? FACES[r.face - 1] : null;
+  var h = '<div class="story" id="st' + r.id + '">';
+  h += '<div class="top">';
+  h += '<span class="who">' + (r.anon ? '🙈 익명' : esc(r.name)) + '</span>';
+  h += '<span class="when">' + esc(r.when) + '</span>';
+  if (f) h += '<span class="tag" style="background:linear-gradient(120deg,' + f.c1 + ',' + f.c2 + ')">' + f.em + ' ' + f.s.replace('\n',' ') + '</span>';
+  h += '</div>';
+  h += '<div class="body">' + esc(r.text) + '</div>';
+  h += '<div class="bottom">';
+  h += '<button class="heart' + (r.liked ? ' on' : '') + '" data-heart="' + r.id + '">' +
+       '<span class="ic">' + (r.liked ? '❤️' : '🤍') + '</span><span class="n">' + r.hearts + '</span></button>';
+  if (r.mine) h += '<button class="linkbtn" data-del="' + r.id + '">지우기</button>';
+  else h += '<button class="linkbtn" data-rep="' + r.id + '">신고</button>';
+  h += '</div></div>';
+  return h;
+}
+
+function onFeedClick(e){
+  var hb = e.target.closest('[data-heart]');
+  if (hb){ tapHeart(hb); return; }
+  var db = e.target.closest('[data-del]');
+  if (db){
+    var pw = prompt('글을 올릴 때 정한 숫자 4자리를 넣어 주세요.');
+    if (pw === null) return;
+    call('deleteStory', [Number(db.getAttribute('data-del')), UID, pw], function(res){
+      if (res && res.ok){
+        var el = $('st' + res.id);
+        if (el) el.remove();
+        delete seenIds[res.id];
+        /* 목록이 한 칸 당겨졌으니 「더 보기」 위치도 함께 당긴다 (안 그러면 글 하나를 건너뛴다) */
+        if (feedStart > 0) feedStart--;
+      }
+      else alert((res && res.error) || '지우지 못했습니다.');
+    });
+    return;
+  }
+  var rb = e.target.closest('[data-rep]');
+  if (rb){
+    if (!confirm('이 글을 신고할까요? 여러 명이 신고하면 자동으로 숨겨집니다.')) return;
+    call('reportStory', [Number(rb.getAttribute('data-rep')), UID], function(res){
+      alert(res && res.hidden ? '신고되었고 글이 숨겨졌습니다.' : '신고했습니다. 고맙습니다.');
+    });
+  }
+}
+
+/* 하트 — 먼저 화면을 바꾸고, 서버 대답으로 숫자를 맞춘다 */
+function tapHeart(btn){
+  var id = Number(btn.getAttribute('data-heart'));
+  var on = btn.classList.toggle('on');
+  var nEl = btn.querySelector('.n'), icEl = btn.querySelector('.ic');
+  nEl.textContent = Math.max(0, Number(nEl.textContent) + (on ? 1 : -1));
+  icEl.textContent = on ? '❤️' : '🤍';
+  btn.classList.remove('bump'); void btn.offsetWidth; btn.classList.add('bump');
+  try{ if (navigator.vibrate) navigator.vibrate(14); }catch(e){}
+  call('toggleHeart', [id, UID], function(res){
+    if (!res || !res.ok) return;
+    nEl.textContent = res.hearts;
+    btn.classList.toggle('on', res.liked);
+    icEl.textContent = res.liked ? '❤️' : '🤍';
+  });
+}
+
+function postStory(){
+  var anon = $('chipAnon').classList.contains('on');
+  var data = {
+    uid: UID, anon: anon, name: anon ? '' : $('inName').value.trim(),
+    face: pickedFace, text: $('inText').value, pw: $('inPw').value
+  };
+  var m = $('postMsg');
+  if (data.text.trim().length < 5){ m.innerHTML = '<div class="msg no">내용을 5글자 이상 적어 주세요.</div>'; return; }
+  if (!anon && !data.name){ m.innerHTML = '<div class="msg no">이름을 적거나 「익명으로 올리기」를 눌러 주세요.</div>'; return; }
+  if (!/^\d{4}$/.test(data.pw)){ m.innerHTML = '<div class="msg no">지울 때 쓸 숫자 4자리를 넣어 주세요.</div>'; return; }
+
+  $('btnPost').disabled = true;
+  m.innerHTML = '<div class="msg info">올리는 중…</div>';
+  call('addStory', [data], function(res){
+    $('btnPost').disabled = false;
+    if (!res || !res.ok){ m.innerHTML = '<div class="msg no">' + esc((res && res.error) || '올리지 못했습니다.') + '</div>'; return; }
+    m.innerHTML = '<div class="msg ok">고맙습니다! 이야기가 올라갔어요 💜</div>';
+    $('inText').value = ''; $('inPw').value = ''; $('cnt').textContent = '0';
+    if (sortMode === 'heart'){
+      /* 공감 많은 순으로 보는 중이면 하트 0개인 새 글을 맨 위에 끼워 넣으면 순서가 어긋난다 */
+      loadFeed(true);
+    } else if (filterFace === 0 || filterFace === res.row.face){
+      var box = $('feed');
+      if (box.querySelector('.muted')) box.innerHTML = '';
+      seenIds[res.row.id] = 1;
+      feedStart++;                        /* 목록이 한 칸 밀렸으니 「더 보기」 위치도 함께 민다 */
+      box.insertAdjacentHTML('afterbegin', storyHtml(res.row));
+    }
+    setTimeout(function(){ m.innerHTML = ''; }, 4000);
+  }, function(){
+    $('btnPost').disabled = false;
+    m.innerHTML = '<div class="msg no">올리지 못했습니다. 인터넷 연결을 확인해 주세요.</div>';
+  });
+}
+
+/* ─────────────── 배경화면 만들기 ─────────────── */
+var THEMES = [
+  { n:'보라 노을', a:'#7c3aed', b:'#db2777', ink:'#ffffff' },
+  { n:'새벽 하늘', a:'#1e3a8a', b:'#0ea5e9', ink:'#ffffff' },
+  { n:'숲 아침',   a:'#065f46', b:'#84cc16', ink:'#ffffff' },
+  { n:'노을 오렌지', a:'#b45309', b:'#f59e0b', ink:'#ffffff' },
+  { n:'밤 하늘',   a:'#111827', b:'#4c1d95', ink:'#ffffff' },
+  { n:'맑은 종이', a:'#fdf4ff', b:'#e9d5ff', ink:'#3b1d5e' }
+];
+var wallKind = 'lock', themeIdx = 0;
+
+function buildWallControls(){
+  var sel = $('wallFace'), h = '';
+  for (var i = 0; i < 6; i++) h += '<option value="' + i + '">' + FACES[i].t + '</option>';
+  sel.innerHTML = h;
+
+  var d = '';
+  for (var j = 0; j < THEMES.length; j++){
+    d += '<span class="dot' + (j === 0 ? ' on' : '') + '" data-th="' + j + '" title="' + THEMES[j].n +
+         '" style="background:linear-gradient(135deg,' + THEMES[j].a + ',' + THEMES[j].b + ')"></span>';
+  }
+  $('themeDots').innerHTML = d;
+}
+
+/* 내 폰 화면 크기 (없으면 아이폰 크기로) */
+function deviceSize(){
+  var r = window.devicePixelRatio || 1;
+  var w = Math.round((window.screen.width || 390) * r);
+  var h = Math.round((window.screen.height || 844) * r);
+  if (h < w){ var t = w; w = h; h = t; }          /* 늘 세로로 */
+  if (w < 640 || h < 1000){ w = 1170; h = 2532; } /* 컴퓨터에서 열었을 때 */
+  w = Math.min(w, 1600); h = Math.min(h, 3600);
+  return { w: w, h: h };
+}
+
+/* 캔버스에 글을 그리되, 폭에 맞춰 줄을 나눈다 (한글은 띄어쓰기가 없어도 잘라 준다) */
+function wrapText(g, text, maxW){
+  var out = [], words = text.split(' '), line = '';
+  for (var i = 0; i < words.length; i++){
+    var test = line ? (line + ' ' + words[i]) : words[i];
+    if (g.measureText(test).width <= maxW){ line = test; continue; }
+    if (line){ out.push(line); line = ''; }
+    var w = words[i];
+    if (g.measureText(w).width <= maxW){ line = w; continue; }
+    var cur = '';
+    for (var c = 0; c < w.length; c++){
+      if (g.measureText(cur + w[c]).width > maxW){ out.push(cur); cur = w[c]; }
+      else cur += w[c];
+    }
+    line = cur;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+function drawWall(canvas, W, H, faceIdx, kind, th){
+  var g = canvas.getContext('2d');
+  canvas.width = W; canvas.height = H;
+
+  /* 바탕 그러데이션 */
+  var grd = g.createLinearGradient(0, 0, W * .35, H);
+  grd.addColorStop(0, th.a); grd.addColorStop(1, th.b);
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+
+  /* 은은한 동그라미 두 개 */
+  g.globalAlpha = (th.ink === '#ffffff') ? 0.10 : 0.35;
+  g.fillStyle = th.ink;
+  g.beginPath(); g.arc(W * 0.86, H * 0.13, W * 0.42, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(W * 0.05, H * 0.72, W * 0.34, 0, Math.PI * 2); g.fill();
+  g.globalAlpha = 1;
+
+  var pad = Math.round(W * 0.10);
+  var maxW = W - pad * 2;
+  var f = FACES[faceIdx];
+
+  /*
+   * 크기의 기준자(U). 그냥 가로폭만 쓰면 태블릿처럼 정사각형에 가까운 화면에서
+   * 주사위 그림과 글씨가 너무 커져 위아래로 넘친다. 세로도 함께 본다.
+   * 보통 폰(예: 1080×2340)에서는 H*0.46 ≈ W 라 지금까지와 똑같이 보인다.
+   */
+  var U = Math.min(W, H * 0.46);
+
+  /* ① 먼저 글자 크기와 줄 수를 정한다 (세 줄을 넘지 않게 조금씩 줄인다) */
+  var size = Math.round(U * 0.105);
+  var lines;
+  for (;;){
+    g.font = '800 ' + size + 'px "Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+    lines = wrapText(g, f.t, maxW);
+    if (lines.length <= 3 || size <= Math.round(U * 0.06)) break;
+    size -= Math.max(1, Math.round(U * 0.006));
+  }
+  var lh = Math.round(size * 1.34);
+
+  /* ② 글이 놓이는 세로 위치 — 잠금화면은 시계를 피해 아래쪽에 */
+  var anchor = (kind === 'lock') ? H * 0.72 : H * 0.50;
+  /* 화면이 짧으면 위아래로 넘치지 않게 끌어당긴다 */
+  var half = (lines.length - 1) * lh / 2;
+  var needBelow = half + lh + Math.round(U * 0.08);  /* 마지막 줄 + 날짜 줄까지 */
+  var needAbove = half + Math.round(U * 0.62);       /* 주사위 그림 꼭대기까지 */
+  anchor = Math.min(anchor, H - needBelow - Math.round(H * 0.02));
+  anchor = Math.max(anchor, needAbove + Math.round(H * 0.02));
+
+  /* ③ 주사위 그림 (둥근 사각형 + 점 6개) */
+  var cs = Math.round(U * 0.17);
+  var cx = W / 2 - cs / 2, cy = anchor - Math.round(U * 0.52);
+  g.save();
+  g.globalAlpha = .95;
+  g.fillStyle = th.ink;
+  roundRect(g, cx, cy, cs, cs, cs * 0.24); g.fill();
+  g.fillStyle = th.a;
+  var r = cs * 0.075;
+  [[.28,.26],[.28,.5],[.28,.74],[.72,.26],[.72,.5],[.72,.74]].forEach(function(p){
+    g.beginPath(); g.arc(cx + cs * p[0], cy + cs * p[1], r, 0, Math.PI * 2); g.fill();
+  });
+  g.restore();
+
+  /* 작은 제목 */
+  g.textAlign = 'center'; g.fillStyle = th.ink;
+  g.globalAlpha = .8;
+  g.font = '600 ' + Math.round(U * 0.042) + 'px "Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+  g.fillText('오늘의 사랑의 주사위', W / 2, anchor - Math.round(U * 0.28));
+  g.globalAlpha = 1;
+
+  /* 큰 문구 */
+  g.font = '800 ' + size + 'px "Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+  var y = anchor - Math.round(half) + Math.round(U * 0.02);
+  g.fillStyle = th.ink;
+  g.shadowColor = 'rgba(0,0,0,.22)'; g.shadowBlur = Math.round(U * 0.02); g.shadowOffsetY = Math.round(U * 0.006);
+  for (var i = 0; i < lines.length; i++) g.fillText(lines[i], W / 2, y + i * lh);
+  g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+
+  /* 아래 한 줄 */
+  var d = new Date();
+  g.globalAlpha = .72;
+  g.font = '500 ' + Math.round(U * 0.036) + 'px "Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+  g.fillText((d.getMonth() + 1) + '월 ' + d.getDate() + '일  ·  사랑의 주사위',
+             W / 2, y + lines.length * lh + Math.round(U * 0.03));
+  g.globalAlpha = 1;
+}
+
+function roundRect(g, x, y, w, h, r){
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+function drawPreview(){
+  var f = Number($('wallFace').value || 0);
+  var sz = deviceSize();
+  var pw = 186, ph = Math.round(pw * sz.h / sz.w);
+  $('wallPrev').style.height = ph + 'px';
+  drawWall($('wallPrev'), pw, ph, f, wallKind, THEMES[themeIdx]);
+  $('wallSize').textContent = '내 폰 크기 : ' + sz.w + ' × ' + sz.h;
+}
+
+var wallDataUrl = '';
+function makeWall(){
+  var f = Number($('wallFace').value || 0);
+  var sz = deviceSize();
+  var c = document.createElement('canvas');
+  drawWall(c, sz.w, sz.h, f, wallKind, THEMES[themeIdx]);
+  wallDataUrl = c.toDataURL('image/png');
+  $('wallOut').src = wallDataUrl;
+  $('wallResult').classList.remove('hide');
+  setTimeout(function(){ $('wallResult').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60);
+}
+
+function shareWall(){
+  if (!wallDataUrl) return;
+  fetch(wallDataUrl).then(function(r){ return r.blob(); }).then(function(blob){
+    var file = new File([blob], '사랑의주사위.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      return navigator.share({ files: [file], title: '오늘의 사랑의 주사위' });
+    }
+    throw new Error('no share');
+  }).catch(function(){
+    /* 공유가 막혀 있으면 내려받기로 */
+    var a = document.createElement('a');
+    a.href = wallDataUrl; a.download = '사랑의주사위.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+}
+
+function openWallNewTab(){
+  if (!wallDataUrl) return;
+  var w = window.open('', '_blank');
+  if (!w){ alert('팝업이 막혀 있어요. 그림을 꾹 눌러 저장해 주세요.'); return; }
+  w.document.write('<title>사랑의 주사위</title>' +
+    '<body style="margin:0;background:#111;display:grid;place-items:center">' +
+    '<img src="' + wallDataUrl + '" style="max-width:100%;max-height:100vh">');
+  w.document.close();
+}
+
+/* ─────────────── 위젯 안내 글 채우기 ─────────────── */
+function refreshWidgetTexts(){
+  var base = APP_URL || (location.href.split('?')[0]);
+  var known = !!APP_URL;
+  var myUrl = base + '?api=my&u=' + UID;
+
+  $('apiUrl1').textContent = known ? myUrl : '(앱을 배포한 뒤 그 주소로 접속하면 여기에 표시됩니다)';
+  $('apiUrl2').textContent = known ? myUrl : '(앱을 배포한 뒤 그 주소로 접속하면 여기에 표시됩니다)';
+  /* KWGT 수식 — wg(주소, 필터, 파라미터) 가 정식 문법이고 JSON 은 json 필터 + JSONPath 를 쓴다 */
+  $('apiFormula').textContent = known ? ('$wg(' + myUrl + ', json, .text)$')
+                                      : '(앱을 배포한 뒤 그 주소로 접속하면 여기에 표시됩니다)';
+  $('urlWarn').classList.toggle('hide', known);
+  $('scriptBox').textContent = scriptableCode(known ? base : 'https://script.google.com/…/exec', UID);
+}
+
+/* 아이폰 Scriptable 위젯 스크립트를 만들어 준다 */
+function scriptableCode(url, uid){
+  var L = [];
+  L.push('// 사랑의 주사위 — 잠금화면 / 홈화면 위젯 (Scriptable)');
+  L.push('const APP_URL = "' + url + '";');
+  L.push('const UID = "' + uid + '";');
+  L.push('');
+  L.push('let data;');
+  L.push('try {');
+  L.push('  const req = new Request(APP_URL + "?api=my&u=" + UID);');
+  L.push('  req.timeoutInterval = 15;');
+  L.push('  data = await req.loadJSON();');
+  L.push('} catch (e) {');
+  L.push('  data = { text: "먼저 사랑하자", short: "먼저 사랑하자", mine: false };');
+  L.push('}');
+  L.push('');
+  L.push('const lock = (config.runsInAccessoryWidget === true);');
+  L.push('const w = new ListWidget();');
+  L.push('w.url = APP_URL;');
+  L.push('');
+  L.push('if (lock) {');
+  L.push('  // 잠금화면 위젯 — 글씨만 보인다');
+  L.push('  const t = w.addText(data.short || data.text || "");');
+  L.push('  t.font = Font.semiboldSystemFont(13);');
+  L.push('  t.minimumScaleFactor = 0.55;');
+  L.push('} else {');
+  L.push('  const g = new LinearGradient();');
+  L.push('  g.colors = [new Color("#7c3aed"), new Color("#db2777")];');
+  L.push('  g.locations = [0, 1];');
+  L.push('  w.backgroundGradient = g;');
+  L.push('  w.setPadding(16, 16, 16, 16);');
+  L.push('  const h = w.addText("🎲 오늘의 사랑의 주사위");');
+  L.push('  h.font = Font.systemFont(11);');
+  L.push('  h.textColor = Color.white();');
+  L.push('  h.textOpacity = 0.8;');
+  L.push('  w.addSpacer(6);');
+  L.push('  const t = w.addText(data.text || "");');
+  L.push('  t.font = Font.boldSystemFont(20);');
+  L.push('  t.textColor = Color.white();');
+  L.push('  t.minimumScaleFactor = 0.5;');
+  L.push('  w.addSpacer(4);');
+  L.push('  const s = w.addText(data.mine ? "내가 던진 오늘의 면" : "오늘 함께 보는 면");');
+  L.push('  s.font = Font.systemFont(10);');
+  L.push('  s.textColor = Color.white();');
+  L.push('  s.textOpacity = 0.75;');
+  L.push('}');
+  L.push('');
+  L.push('if (config.runsInWidget) Script.setWidget(w);');
+  L.push('else w.presentMedium();');
+  L.push('Script.complete();');
+  return L.join('\n');
+}
+
+function copyText(txt, btn){
+  var done = function(){
+    var old = btn.textContent;
+    btn.textContent = '✓ 복사했어요';
+    setTimeout(function(){ btn.textContent = old; }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(function(){ fallbackCopy(txt, done); });
+  } else fallbackCopy(txt, done);
+}
+function fallbackCopy(txt, done){
+  var ta = document.createElement('textarea');
+  ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ alert('복사가 안 돼요. 길게 눌러 직접 복사해 주세요.'); }
+  ta.remove();
+}
+
+/* ─────────────── 소개 화면 ─────────────── */
+function buildAboutFaces(){
+  var h = '';
+  for (var i = 0; i < 6; i++){
+    var f = FACES[i];
+    h += '<div class="face-item">' +
+         '<span class="face-no" style="background:linear-gradient(135deg,' + f.c1 + ',' + f.c2 + ')">' + f.em + '</span>' +
+         '<span class="tx"><b>' + f.t + '</b><span>' + f.d + '</span></span></div>';
+  }
+  $('aboutFaces').innerHTML = h;
+}
+
+/* ─────────────── 탭 ─────────────── */
+function go(name){
+  ['dice', 'share', 'widget', 'about'].forEach(function(k){
+    $('page-' + k).classList.toggle('hide', k !== name);
+  });
+  [].forEach.call(document.querySelectorAll('nav.tabbar button'), function(b){
+    b.classList.toggle('on', b.getAttribute('data-go') === name);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ─────────────── 이벤트 묶기 ─────────────── */
+function bindAll(){
+  document.querySelector('nav.tabbar').onclick = function(e){
+    var b = e.target.closest('button'); if (b) go(b.getAttribute('data-go'));
+  };
+  $('btnRoll').onclick = rollDice;
+  $('btnShake').onclick = enableShake;
+  if (window.DeviceMotionEvent && 'ontouchstart' in window) $('btnShake').classList.remove('hide');
+  else if (window.DeviceMotionEvent) startShake();
+
+  $('chipAnon').onclick = function(){
+    var on = this.classList.toggle('on');
+    $('inName').disabled = on;
+    $('inName').style.opacity = on ? .45 : 1;
+    if (on) $('inName').value = '';
+  };
+  $('inName').disabled = true; $('inName').style.opacity = .45;
+  $('inName').oninput = function(){ if (this.value) $('chipAnon').classList.remove('on'); };
+  $('inText').oninput = function(){ $('cnt').textContent = this.value.length; };
+  $('inPw').oninput = function(){ this.value = this.value.replace(/\D/g, ''); };
+  $('btnPost').onclick = postStory;
+  $('feed').onclick = onFeedClick;
+  $('btnMore').onclick = function(){ loadFeed(false); };
+
+  document.querySelectorAll('[data-sort]').forEach(function(b){
+    b.onclick = function(){
+      sortMode = b.getAttribute('data-sort');
+      document.querySelectorAll('[data-sort]').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      loadFeed(true);
+    };
+  });
+
+  $('wallKind').onclick = function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    wallKind = b.getAttribute('data-kind');
+    [].forEach.call(this.children, function(c){ c.classList.remove('on'); });
+    b.classList.add('on');
+    drawPreview();
+  };
+  $('themeDots').onclick = function(e){
+    var d = e.target.closest('[data-th]'); if (!d) return;
+    themeIdx = Number(d.getAttribute('data-th'));
+    [].forEach.call(this.children, function(c){ c.classList.remove('on'); });
+    d.classList.add('on');
+    drawPreview();
+  };
+  $('wallFace').onchange = drawPreview;
+  $('btnMakeWall').onclick = makeWall;
+  $('btnShare').onclick = shareWall;
+  $('btnNewTab').onclick = openWallNewTab;
+
+  $('btnCopyScript').onclick = function(){ copyText($('scriptBox').textContent, this); };
+  $('btnCopyUrl1').onclick = function(){ copyText($('apiUrl1').textContent, this); };
+  $('btnCopyUrl2').onclick = function(){ copyText($('apiUrl2').textContent, this); };
+  $('btnCopyFormula').onclick = function(){ copyText($('apiFormula').textContent, this); };
+}
+
+/* ═══════════════ 미리보기 모드용 가짜 서버 ═══════════════
+   index.html 을 그냥 열었을 때도 전부 눌러 볼 수 있게, 이 컴퓨터 안에만 저장한다. */
+function demoDb(){
+  try{ return JSON.parse(localStorage.getItem('ld_demo') || '{}'); }catch(e){ return {}; }
+}
+function demoSave(db){
+  try { localStorage.setItem('ld_demo', JSON.stringify(db)); } catch (e) {}
+}
+
+function demo(fn, args, ok){
+  var db = demoDb();
+  db.stories = db.stories || [];
+  db.stat = db.stat || { date: ymd(), people: 0, dist: [0,0,0,0,0,0] };
+  if (db.stat.date !== ymd()) db.stat = { date: ymd(), people: 0, dist: [0,0,0,0,0,0] };
+
+  if (fn === 'getToday'){
+    demoSave(db);
+    return ok({ ok:true, date: ymd(), myFace: todayLocalFace(), commonFace: 1, stat: db.stat, url: '' });
+  }
+  if (fn === 'saveMyRoll'){
+    var face = args[1];
+    if (db.myFace === undefined || db.statDate !== ymd()){ db.stat.people++; db.statDate = ymd(); }
+    else if (db.myFace >= 0) db.stat.dist[db.myFace] = Math.max(0, db.stat.dist[db.myFace] - 1);
+    db.myFace = face; db.stat.dist[face]++;
+    demoSave(db);
+    return ok({ ok:true, stat: db.stat });
+  }
+  if (fn === 'getFeed'){
+    var o = args[0] || {};
+    var list = db.stories.filter(function(s){ return !o.face || s.face === o.face; });
+    list = list.slice().sort(function(a,b){
+      return o.sort === 'heart' ? (b.hearts - a.hearts) || (b.id - a.id) : (b.id - a.id);
+    });
+    var st = o.start || 0;
+    return ok({ ok:true, rows: list.slice(st, st + 20), total: list.length, more: st + 20 < list.length });
+  }
+  if (fn === 'addStory'){
+    var p = args[0];
+    var d = new Date();
+    var row = {
+      id: (db.seq = (db.seq || 0) + 1),
+      when: (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'),
+      name: p.anon ? '익명' : p.name, anon: !!p.anon, face: p.face,
+      text: p.text.trim().slice(0, 500), hearts: 0, liked: false, mine: true
+    };
+    db.stories.push(row); demoSave(db);
+    return ok({ ok:true, row: row });
+  }
+  if (fn === 'toggleHeart'){
+    var id = args[0], hit = null;
+    db.stories.forEach(function(s){ if (s.id === id) hit = s; });
+    if (!hit) return ok({ ok:false });
+    hit.liked = !hit.liked;
+    hit.hearts = Math.max(0, hit.hearts + (hit.liked ? 1 : -1));
+    demoSave(db);
+    return ok({ ok:true, id:id, hearts: hit.hearts, liked: hit.liked });
+  }
+  if (fn === 'deleteStory'){
+    var did = args[0];
+    db.stories = db.stories.filter(function(s){ return s.id !== did; });
+    demoSave(db);
+    return ok({ ok:true, id: did });
+  }
+  if (fn === 'reportStory'){ return ok({ ok:true, hidden:false }); }
+  return ok({ ok:false, error:'미리보기 모드' });
+}
+
+boot();
+</script>
+</body>
+</html>

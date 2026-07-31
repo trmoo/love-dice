@@ -1,0 +1,15 @@
+# 구글 clasp 로 내려받을 때 생기는 것
+.clasp.json
+.clasprc.json
+
+# 편집기 · 운영체제
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 임시 파일
+*.log
+*.tmp
+~$*
