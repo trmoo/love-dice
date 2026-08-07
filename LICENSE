@@ -1,0 +1,45 @@
+저작권 및 이용 범위
+====================
+
+© 2026 티쳐무 · 모든 권리 보유 (All rights reserved)
+
+사랑의 주사위 (Cube of Love) — 성당·모임용 웹앱 (구글 Apps Script)
+https://github.com/trmoo/love-dice
+
+
+* 이 저장소의 코드와 문서의 무단 배포 및 상업적 이용을 금합니다.
+
+* **성당 · 본당 · 소모임 등 신앙 나눔 목적으로만 이용해 주세요.**
+  모임에서 주소를 알려 주는 것, 직접 구글 계정에 설치해 쓰시는 것은 자유롭게 하셔도 됩니다.
+
+* 그 밖의 이용(재배포 · 2차 저작물 · 그 밖의 목적)은 먼저 문의해 주세요.
+
+* 오픈소스 라이선스를 붙이지 않았습니다.
+  별도 허락이 없으면 저작권자가 모든 권리를 가집니다.
+
+■ 여섯 면의 문구와 해설은 제작자의 것이 아닙니다
+
+  「사랑의 주사위」(Cube of Love)는 포콜라레 운동의 것입니다.
+  이 앱에 담긴 여섯 면의 문구와 해설 원문은 포콜라레 4젠 누리집에서 가져왔습니다.
+    http://gen4.co.kr/how-we-live/the-art-of-loving-and-the-cube/
+  허용 신부의 대추나무 주사위 이야기는 가톨릭신문 2010-01-20 기사를 참고했습니다.
+    https://www.catholictimes.org/article/201001200272669
+
+  그 문구와 해설의 저작권은 각 원저작자에게 있으며, 이 저장소의 「모든 권리 보유」는
+  프로그램 코드 · 화면 디자인 · 3D 주사위 구현 등 제작자가 새로 만든 부분에만 해당합니다.
+
+
+─────────────────────────────────────────────────────────────────────────────
+Copyright and Terms of Use  (English summary)
+─────────────────────────────────────────────────────────────────────────────
+
+© 2026 티쳐무 (Teacher Moo). All rights reserved.
+
+* Unauthorized redistribution and commercial use of the code and the
+  documentation in this repository are prohibited.
+* Please use this for parish and small-group faith-sharing purposes only.
+  You are free to share the URL, or to deploy your own copy.
+* For any other use (redistribution, derivative works, or other purposes),
+  please ask first.
+* No open-source license is granted. Unless permission is given separately,
+  the copyright holder retains all rights.
